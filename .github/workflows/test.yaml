@@ -103,10 +103,12 @@ jobs:
         run: make generate manifests
 
       - name: Deploy images
-        run: make deploy ERASER_IMG=ghcr.io/azure/eraser:test
+        run: make deploy IMG=ghcr.io/azure/eraser-manager:test ERASER_IMG=ghcr.io/azure/eraser:test
 
       - name: Sleep for 10 seconds
-        run: sleep 10s
+        run: |
+          sleep 10s
+          kubectl get pods -A -o yaml
 
       - name: Deploy test ImageList
         run: kubectl apply -f config/samples/eraser_e2e_imagelist.yaml
