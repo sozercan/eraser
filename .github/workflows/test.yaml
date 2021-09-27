@@ -84,32 +84,37 @@ jobs:
       - name: Build eraser
         run: make docker-build-eraser CACHE_FROM=type=gha,scope=eraser-node CACHE_TO=type=gha,scope=eraser-node,mode=max ERASER_IMG=ghcr.io/azure/eraser:test
 
+      - name: Pull test image
+        run: docker pull docker.io/library/hello-world:latest
+
+      - name: Load controller and eraser image on the nodes of the cluster
+        run: |
+          kind load docker-image ghcr.io/azure/eraser-manager:test --name ${{ env.CLUSTER_NAME }}
+          kind load docker-image ghcr.io/azure/eraser:test --name ${{ env.CLUSTER_NAME }}
+          kind load docker-image docker.io/library/hello-world:latest --name ${{ env.CLUSTER_NAME }}
+
+      - name: Get list of images from control-plane node
+        run: |
+          docker exec ${{ env.CLUSTER_NAME }}-control-plane ctr -n k8s.io images list
+          docker exec ${{ env.CLUSTER_NAME }}-worker ctr -n k8s.io images list
+          docker exec ${{ env.CLUSTER_NAME }}-worker2 ctr -n k8s.io images list
+
       - name: Generate manifests
         run: make generate manifests
 
       - name: Deploy images
         run: make deploy ERASER_IMG=ghcr.io/azure/eraser:test
 
-      - name: Pull test image
-        run: docker pull hello-world
-
-      - name: Load controller and eraser image on the nodes of the cluster
-        run: |
-          kind load docker-image ghcr.io/azure/eraser-manager:test ghcr.io/azure/eraser:test hello-world:latest --name ${{ env.CLUSTER_NAME }}
-
       - name: Sleep for 10 seconds
         run: sleep 10s
 
-      - name: Get list of images from control-plane node
-        run: docker exec ${{ env.CLUSTER_NAME }}-control-plane ctr -n k8s.io images list
-
-      - name: Deploy eraser_e2e_imagelist.yaml
+      - name: Deploy test ImageList
         run: kubectl apply -f config/samples/eraser_e2e_imagelist.yaml
 
       - name: Sleep for 10 seconds
         run: sleep 10s
 
-      - name: Get image list
+      - name: Get ImageList
         run: kubectl get imagelist
 
       - name: Sleep for 10 seconds
