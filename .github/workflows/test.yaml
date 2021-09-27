@@ -88,7 +88,7 @@ jobs:
         run: make generate manifests
 
       - name: Deploy images
-        run: make deploy IS_IC=true ERASER_IMG=ghcr.io/azure/eraser:test
+        run: make deploy ERASER_IMG=ghcr.io/azure/eraser:test
 
       - name: Pull test image
         run: docker pull hello-world
