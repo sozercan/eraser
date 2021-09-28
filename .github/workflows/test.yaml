@@ -76,21 +76,21 @@ jobs:
         uses: helm/kind-action@v1.2.0
         with:
           cluster_name: ${{ env.CLUSTER_NAME }}
-          config: .github/workflows/kind-config/kind-config.yaml
+          config: .github/workflows/config/kind-config.yaml
 
       - name: Build controller
-        run: make docker-build CACHE_FROM=type=gha,scope=eraser-manager CACHE_TO=type=gha,scope=eraser-manager,mode=max IMG=ghcr.io/azure/eraser-manager:test
+        run: make docker-build CACHE_FROM=type=gha,scope=eraser-manager CACHE_TO=type=gha,scope=eraser-manager,mode=max IMG=ghcr.io/azure/eraser-manager:latest
 
       - name: Build eraser
-        run: make docker-build-eraser CACHE_FROM=type=gha,scope=eraser-node CACHE_TO=type=gha,scope=eraser-node,mode=max ERASER_IMG=ghcr.io/azure/eraser:test
+        run: make docker-build-eraser CACHE_FROM=type=gha,scope=eraser-node CACHE_TO=type=gha,scope=eraser-node,mode=max ERASER_IMG=ghcr.io/azure/eraser:latest
 
       - name: Pull test image
         run: docker pull docker.io/library/hello-world:latest
 
       - name: Load controller and eraser image on the nodes of the cluster
         run: |
-          kind load docker-image ghcr.io/azure/eraser-manager:test --name ${{ env.CLUSTER_NAME }}
-          kind load docker-image ghcr.io/azure/eraser:test --name ${{ env.CLUSTER_NAME }}
+          kind load docker-image ghcr.io/azure/eraser-manager:latest --name ${{ env.CLUSTER_NAME }}
+          kind load docker-image ghcr.io/azure/eraser:latest --name ${{ env.CLUSTER_NAME }}
           kind load docker-image docker.io/library/hello-world:latest --name ${{ env.CLUSTER_NAME }}
 
       - name: Get list of images from control-plane node
@@ -103,45 +103,29 @@ jobs:
         run: make generate manifests
 
       - name: Deploy images
-        run: make deploy IMG=ghcr.io/azure/eraser-manager:test ERASER_IMG=ghcr.io/azure/eraser:test
-
-      - name: Sleep for 10 seconds
         run: |
-          sleep 10s
-          kubectl get pods -A -o yaml
+          make deploy IMG=ghcr.io/azure/eraser-manager:latest ERASER_IMG=ghcr.io/azure/eraser:latest
+          kubectl wait --for condition=established --timeout=60s crd/imagelists.eraser.sh
+          kubectl wait --for condition=established --timeout=60s crd/imagejobs.eraser.sh
+          kubectl wait --for condition=established --timeout=60s crd/imagestatuses.eraser.sh
 
-      - name: Deploy test ImageList
-        run: kubectl apply -f config/samples/eraser_e2e_imagelist.yaml
-
-      - name: Sleep for 10 seconds
-        run: sleep 10s
+      - name: Deploy ImageList
+        run: kubectl apply -f .github/workflows/config/test-imagelist.yaml
 
       - name: Get ImageList
-        run: kubectl get imagelist
+        run: kubectl get imagelist -o yaml
 
-      - name: Sleep for 10 seconds
-        run: sleep 10s
-
-      - name: Get image job
-        run: kubectl get imagejob
-
-      - name: Get pods
-        run: kubectl get pod -A
-
-      - name: Sleep for 10 seconds
-        run: sleep 10s
+      - name: Get ImageJob
+        run: kubectl get imagejob -o yaml
 
       - name: Check if pods are scheduled on all nodes
         run: |
-          chmod u+x .github/workflows/e2e-scripts/checkifpodfitnode.sh
           ./.github/workflows/e2e-scripts/checkifpodfitnode.sh ${{ env.CLUSTER_NAME }}
 
-      - name: Check if pods are complete.
+      - name: Check if pods are complete
         run: |
-          chmod u+x .github/workflows/e2e-scripts/checkifpodsarecomplete.sh
           ./.github/workflows/e2e-scripts/checkifpodsarecomplete.sh ${{ env.CLUSTER_NAME }}
 
       - name: Check if test image is removed
         run: |
-          chmod u+x .github/workflows/e2e-scripts/checktestimagewasremoved.sh
           ./.github/workflows/e2e-scripts/checktestimagewasremoved.sh ${{ env.CLUSTER_NAME }}
