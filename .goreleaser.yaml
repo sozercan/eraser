@@ -1,0 +1,153 @@
+before:
+  hooks:
+    - go mod tidy
+
+release:
+  prerelease: auto
+  extra_files:
+    - glob: deploy/*.yaml
+
+sboms:
+  - artifacts: source
+
+builds:
+  - skip: true
+
+dockers:
+  - image_templates:
+      - "ghcr.io/sozercan/eraser-manager:{{ .Tag }}-amd64"
+    dockerfile: Dockerfile
+    goarch: amd64
+    goos: linux
+    use: buildx
+    build_flag_templates:
+      - "--target=manager"
+      - "--platform=linux/amd64"
+      - "--cache-from=type=gha,scope=eraser-manager,mode=max"
+      - "--cache-to=type=gha,scope=eraser-manager,mode=max"
+      - "--build-arg=BUILD_DATE={{.Date}}"
+      - "--build-arg=BUILD_VERSION={{.Version}}"
+      - "--build-arg=VCS_REF={{.FullCommit}}"
+      - "--build-arg=VCS_URL={{.GitURL}}"
+    extra_files:
+      - go.mod
+      - go.sum
+      - main.go
+      - pkg
+      - controllers
+      - api
+  - image_templates:
+      - "ghcr.io/sozercan/eraser-manager:{{ .Tag }}-arm64"
+    goarch: arm64
+    goos: linux
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--target=manager"
+      - "--platform=linux/arm64"
+      - "--cache-from=type=gha,scope=eraser-manager,mode=max"
+      - "--cache-to=type=gha,scope=eraser-manager,mode=max"
+      - "--build-arg=BUILD_DATE={{.Date}}"
+      - "--build-arg=BUILD_VERSION={{.Version}}"
+      - "--build-arg=VCS_REF={{.FullCommit}}"
+      - "--build-arg=VCS_URL={{.GitURL}}"
+    extra_files:
+      - go.mod
+      - go.sum
+      - main.go
+      - pkg
+      - controllers
+      - api
+
+  - image_templates:
+      - "ghcr.io/sozercan/eraser:{{ .Tag }}-amd64"
+    goarch: amd64
+    goos: linux
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--target=eraser"
+      - "--platform=linux/amd64"
+      - "--cache-from=type=gha,scope=eraser,mode=max"
+      - "--cache-to=type=gha,scope=eraser,mode=max"
+      - "--build-arg=BUILD_DATE={{.Date}}"
+      - "--build-arg=BUILD_VERSION={{.Version}}"
+      - "--build-arg=VCS_REF={{.FullCommit}}"
+      - "--build-arg=VCS_URL={{.GitURL}}"
+    extra_files:
+      - go.mod
+      - go.sum
+      - main.go
+      - pkg
+      - controllers
+      - api
+  - image_templates:
+      - "ghcr.io/sozercan/eraser:{{ .Tag }}-arm64"
+    goarch: arm64
+    goos: linux
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--target=eraser"
+      - "--platform=linux/arm64"
+      - "--cache-from=type=gha,scope=eraser,mode=max"
+      - "--cache-to=type=gha,scope=eraser,mode=max"
+      - "--build-arg=BUILD_DATE={{.Date}}"
+      - "--build-arg=BUILD_VERSION={{.Version}}"
+      - "--build-arg=VCS_REF={{.FullCommit}}"
+      - "--build-arg=VCS_URL={{.GitURL}}"
+    extra_files:
+      - go.mod
+      - go.sum
+      - main.go
+      - pkg
+      - controllers
+      - api
+
+docker_manifests:
+  - name_template: ghcr.io/sozercan/eraser-manager:{{ .Tag }}
+    image_templates:
+      - ghcr.io/sozercan/eraser-manager:{{ .Tag }}-amd64
+      - ghcr.io/sozercan/eraser-manager:{{ .Tag }}-arm64
+  - name_template: ghcr.io/sozercan/eraser-manager:latest
+    image_templates:
+      - ghcr.io/sozercan/eraser-manager:{{ .Tag }}-amd64
+      - ghcr.io/sozercan/eraser-manager:{{ .Tag }}-arm64
+
+  - name_template: ghcr.io/sozercan/eraser:{{ .Tag }}
+    image_templates:
+      - ghcr.io/sozercan/eraser:{{ .Tag }}-amd64
+      - ghcr.io/sozercan/eraser:{{ .Tag }}-arm64
+  - name_template: ghcr.io/sozercan/eraser:latest
+    image_templates:
+      - ghcr.io/sozercan/eraser:{{ .Tag }}-amd64
+      - ghcr.io/sozercan/eraser:{{ .Tag }}-arm64
+
+changelog:
+  skip: false
+  use: github
+  groups:
+    - title: Bug Fixes 🐞
+      regexp: ^.*fix[(\\w)]*:+.*$
+    - title: Build 🏭
+      regexp: ^.*build[(\\w)]*:+.*$
+    - title: Code Refactoring 💎
+      regexp: ^.*refactor[(\\w)]*:+.*$
+    - title: Code Style 🎶
+      regexp: ^.*style[(\\w)]*:+.*$
+    - title: Continuous Integration 💜
+      regexp: ^.*ci[(\\w)]*:+.*$
+    - title: Documentation 📘
+      regexp: ^.*docs[(\\w)]*:+.*$
+    - title: Features 🌈
+      regexp: ^.*feat[(\\w)]*:+.*$
+    - title: Maintenance 🔧
+      regexp: ^.*chore[(\\w)]*:+.*$
+    - title: Performance Improvements 🚀
+      regexp: ^.*perf[(\\w)]*:+.*$
+    - title: Revert Change ◀️
+      regexp: ^.*revert[(\\w)]*:+.*$
+    - title: Security Fix 🛡️
+      regexp: ^.*security[(\\w)]*:+.*$
+    - title: Testing 💚
+      regexp: ^.*test[(\\w)]*:+.*$

@@ -2,14 +2,26 @@
 
 # Build the manager binary
 FROM golang:1.17 AS builder
+
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT=""
+
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH} \
+    GOARM=${TARGETVARIANT}
+
 WORKDIR /workspace
+
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 ENV GOCACHE=/root/gocache
-ENV CGO_ENABLED=0
 RUN \
     --mount=type=cache,target=${GOCACHE} \
     --mount=type=cache,target=/go/pkg/mod \
@@ -20,13 +32,13 @@ FROM builder AS manager-build
 RUN \
     --mount=type=cache,target=${GOCACHE} \
     --mount=type=cache,target=/go/pkg/mod \
-    GOOS=linux GOARCH=amd64 go build -o out/manager main.go
+    go build -ldflags '-w -extldflags "-static"' -o out/manager main.go
 
 FROM builder AS eraser-build
 RUN \
     --mount=type=cache,target=${GOCACHE} \
     --mount=type=cache,target=/go/pkg/mod \
-    GOOS=linux GOARCH=amd64 go build -ldflags '-w -extldflags "-static"' -o out/eraser ./pkg/eraser
+    go build -ldflags '-w -extldflags "-static"' -o out/eraser ./pkg/eraser
 
 FROM gcr.io/distroless/static:latest as eraser
 COPY --from=eraser-build /workspace/out/eraser /
