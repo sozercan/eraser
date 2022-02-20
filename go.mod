@@ -6,7 +6,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.15.0
 	go.uber.org/zap v1.19.0
-	google.golang.org/grpc v1.38.0
+	google.golang.org/grpc v1.38.1
 	k8s.io/api v0.22.6
 	k8s.io/apimachinery v0.22.6
 	k8s.io/apiserver v0.22.6
