@@ -44,6 +44,16 @@ RUN \
     --mount=type=cache,target=/go/pkg/mod \
     GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build ${LDFLAGS:+-ldflags "$LDFLAGS"} -o out/trivy-scanner ./pkg/scanners/trivy
 
+FROM builder AS cosign-scanner-build
+ARG LDFLAGS
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN \
+    --mount=type=cache,target=${GOCACHE} \
+    --mount=type=cache,target=/go/pkg/mod \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build ${LDFLAGS:+-ldflags "$LDFLAGS"} -o out/cosign-scanner ./pkg/scanners/cosign
+
 FROM builder AS eraser-build
 ARG LDFLAGS
 ARG TARGETOS
@@ -85,3 +95,8 @@ COPY --from=trivy-scanner-build /workspace/out/trivy-scanner /
 USER 65532:65532
 WORKDIR /var/lib/trivy
 ENTRYPOINT ["/trivy-scanner"]
+
+FROM --platform=$TARGETPLATFORM $STATICNONROOTBASEIMAGE as cosign-scanner
+COPY --from=cosign-scanner-build /workspace/out/cosign-scanner /
+USER 65532:65532
+ENTRYPOINT ["/cosign-scanner"]

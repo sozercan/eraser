@@ -4389,7 +4389,7 @@ spec:
         - --leader-elect=false
         - --eraser-image=ghcr.io/azure/eraser:v0.2.0
         - --collector-image=ghcr.io/azure/collector:v0.2.0
-        - --scanner-image=ghcr.io/azure/eraser-trivy-scanner:v0.2.0
+        - --scanner-image=cosign-scanner:test
         command:
         - /manager
         image: ghcr.io/azure/eraser-manager:v0.2.0
