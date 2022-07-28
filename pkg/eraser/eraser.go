@@ -9,12 +9,16 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/client-go/kubernetes"
 	pb "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+	"k8s.io/kubectl/pkg/scheme"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/Azure/eraser/pkg/logger"
 
 	util "github.com/Azure/eraser/pkg/utils"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/events"
 )
 
 var (
@@ -22,8 +26,9 @@ var (
 	imageListPtr  = flag.String("imagelist", "", "name of ImageList")
 	enableProfile = flag.Bool("enable-pprof", false, "enable pprof profiling")
 	profilePort   = flag.Int("pprof-port", 6060, "port for pprof profiling. defaulted to 6060 if unspecified")
+	emitEvents    = flag.Bool("emit-events", true, "emit events for removed images")
 
-	// Timeout  of connecting to server (default: 5m).
+	// Timeout of connecting to server (default: 5m).
 	timeout  = 5 * time.Minute
 	log      = logf.Log.WithName("eraser")
 	excluded map[string]struct{}
@@ -77,8 +82,31 @@ func main() {
 		log.Info("excluded configmap was empty or does not exist")
 	}
 
-	if err := removeImages(&client, imagelist); err != nil {
+	kubeConfig, err := restclient.InClusterConfig()
+	if err != nil {
+		log.Error(err, "failed to get Kubernetes config")
+		os.Exit(1)
+	}
+
+	kubeClient, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		log.Error(err, "failed to get Kubernetes client")
+		os.Exit(1)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	recorder := eventRecorder(ctx, kubeClient)
+
+	if err := removeImages(&client, imagelist, recorder); err != nil {
 		log.Error(err, "failed to remove images")
 		os.Exit(1)
 	}
+}
+
+func eventRecorder(ctx context.Context, kubeClient *kubernetes.Clientset) events.EventRecorder {
+	eventBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{Interface: kubeClient.EventsV1()})
+	eventBroadcaster.StartRecordingToSink(ctx.Done())
+	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, "eraser-system")
+	return eventRecorder
 }

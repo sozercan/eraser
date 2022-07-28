@@ -252,6 +252,17 @@ func (r *Reconciler) handleImageListEvent(ctx context.Context, req *ctrl.Request
 									"memory": resource.MustParse("30Mi"),
 								},
 							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											APIVersion: "v1",
+											FieldPath:  "spec.nodeName",
+										},
+									},
+								},
+							},
 						},
 					},
 					ServiceAccountName: "eraser-imagejob-pods",
