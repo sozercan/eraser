@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
+	"os"
 
-	"github.com/Azure/eraser/pkg/utils"
 	util "github.com/Azure/eraser/pkg/utils"
+	"github.com/davecgh/go-spew/spew"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/tools/reference"
 	"k8s.io/kubectl/pkg/scheme"
@@ -122,16 +122,18 @@ func removeImages(c Client, targetImages []string, recorder events.EventRecorder
 }
 
 func emitEvent(recorder events.EventRecorder, name []string, digest string) {
+	nodeName := os.Getenv("NODE_NAME")
 	nodeRef := &corev1.ObjectReference{
 		Kind:      "Node",
-		Name:      utils.GetNodeName(),
+		Name:      nodeName,
 		Namespace: "",
-		UID: types.UID(utils.GetNodeName()),
 	}
+
+	spew.Dump(nodeRef)
 
 	ref, err := reference.GetReference(scheme.Scheme, nodeRef)
 	if err != nil {
-		log.Error(err, "could not get reference to node", util.GetNodeName())
+		log.Error(err, "could not get reference to node", nodeName)
 	}
 	recorder.Eventf(ref, nil, corev1.EventTypeNormal, "RemovedImage", "removed image", "Container image %s with digest %s", name, digest)
 }

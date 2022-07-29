@@ -9,11 +9,3 @@ func GetNamespace() string {
 	}
 	return ns
 }
-
-func GetNodeName() string {
-	ns, found := os.LookupEnv("NODE_NAME")
-	if !found {
-		return ""
-	}
-	return ns
-}

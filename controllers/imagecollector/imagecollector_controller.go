@@ -410,6 +410,7 @@ func (r *Reconciler) createScanJob(ctx context.Context, collector *eraserv1alpha
 									},
 								},
 							},
+							SecurityContext: utils.SharedSecurityContext,
 						},
 					},
 				},
@@ -455,7 +456,7 @@ func (r *Reconciler) createImageJob(ctx context.Context, req ctrl.Request, image
 						{
 							Name: excludedName,
 							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: excludedName}, Optional: boolPtr(true)},
+								ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: excludedName}, Optional: utils.BoolPtr(true)},
 							},
 						},
 					},
@@ -479,6 +480,7 @@ func (r *Reconciler) createImageJob(ctx context.Context, req ctrl.Request, image
 									"memory": resource.MustParse("30Mi"),
 								},
 							},
+							SecurityContext: utils.SharedSecurityContext,
 						},
 					},
 					ServiceAccountName: "eraser-imagejob-pods",
@@ -551,10 +553,6 @@ func (r *Reconciler) deleteNodeCRS(ctx context.Context, items []eraserv1alpha1.I
 	return reconcile.Result{}, nil
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
 func (r *Reconciler) handleCompletedImageJob(ctx context.Context, req ctrl.Request, imageCollectorShared *eraserv1alpha1.ImageCollector, childJob *eraserv1alpha1.ImageJob) (ctrl.Result, error) {
 	var err error
 	switch phase := childJob.Status.Phase; phase {
@@ -601,7 +599,7 @@ func (r *Reconciler) handleCompletedImageJob(ctx context.Context, req ctrl.Reque
 		}
 	default:
 		err = errors.New("should not reach this point for imagejob")
-		log.Error(err, "imagejob", childJob)
+		log.Error(err, "image job not in completed or failed phase", "imagejob", childJob)
 	}
 
 	return ctrl.Result{RequeueAfter: *repeatPeriod}, err
