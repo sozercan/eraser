@@ -14,6 +14,8 @@ import (
 
 	_ "net/http/pprof"
 
+	_ "go.uber.org/automaxprocs"
+
 	"github.com/Azure/eraser/pkg/logger"
 	"github.com/aquasecurity/fanal/artifact"
 	artifactImage "github.com/aquasecurity/fanal/artifact/image"
