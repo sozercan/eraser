@@ -9,7 +9,10 @@ import (
 	"os"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/record"
 	pb "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 	"k8s.io/kubectl/pkg/scheme"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -18,7 +21,6 @@ import (
 
 	util "github.com/Azure/eraser/pkg/utils"
 	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/events"
 )
 
 var (
@@ -26,7 +28,7 @@ var (
 	imageListPtr  = flag.String("imagelist", "", "name of ImageList")
 	enableProfile = flag.Bool("enable-pprof", false, "enable pprof profiling")
 	profilePort   = flag.Int("pprof-port", 6060, "port for pprof profiling. defaulted to 6060 if unspecified")
-	emitEvents    = flag.Bool("emit-events", true, "emit events for removed images")
+	emitRemovalEvents    = flag.Bool("emit-removal-events", true, "[alpha] emit events for removed images")
 
 	// Timeout of connecting to server (default: 5m).
 	timeout  = 5 * time.Minute
@@ -82,21 +84,20 @@ func main() {
 		log.Info("excluded configmap was empty or does not exist")
 	}
 
-	kubeConfig, err := restclient.InClusterConfig()
-	if err != nil {
-		log.Error(err, "failed to get Kubernetes config")
-		os.Exit(1)
+	var recorder record.EventRecorder
+	if *emitRemovalEvents {
+		kubeConfig, err := restclient.InClusterConfig()
+		if err != nil {
+			log.Error(err, "failed to get Kubernetes config")
+			os.Exit(1)
+		}
+		kubeClient, err := kubernetes.NewForConfig(kubeConfig)
+		if err != nil {
+			log.Error(err, "failed to get Kubernetes client")
+			os.Exit(1)
+		}
+		recorder = eventRecorder(kubeClient)
 	}
-
-	kubeClient, err := kubernetes.NewForConfig(kubeConfig)
-	if err != nil {
-		log.Error(err, "failed to get Kubernetes client")
-		os.Exit(1)
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	recorder := eventRecorder(ctx, kubeClient)
 
 	if err := removeImages(&client, imagelist, recorder); err != nil {
 		log.Error(err, "failed to remove images")
@@ -104,9 +105,13 @@ func main() {
 	}
 }
 
-func eventRecorder(ctx context.Context, kubeClient *kubernetes.Clientset) events.EventRecorder {
-	eventBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{Interface: kubeClient.EventsV1()})
-	eventBroadcaster.StartRecordingToSink(ctx.Done())
-	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, "eraser-system")
-	return eventRecorder
+func eventRecorder(kubeClient *kubernetes.Clientset) record.EventRecorder {
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartRecordingToSink(
+		&typedcorev1.EventSinkImpl{
+			Interface: kubeClient.CoreV1().Events("")})
+	recorder := eventBroadcaster.NewRecorder(
+		scheme.Scheme,
+		v1.EventSource{Component: "eraser"})
+	return recorder
 }

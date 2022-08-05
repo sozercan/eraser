@@ -5,14 +5,13 @@ import (
 	"os"
 
 	util "github.com/Azure/eraser/pkg/utils"
-	"github.com/davecgh/go-spew/spew"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/events"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/tools/reference"
 	"k8s.io/kubectl/pkg/scheme"
 )
 
-func removeImages(c Client, targetImages []string, recorder events.EventRecorder) error {
+func removeImages(c Client, targetImages []string, recorder record.EventRecorder) error {
 	backgroundContext, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -52,6 +51,7 @@ func removeImages(c Client, targetImages []string, recorder events.EventRecorder
 	// remove target images
 	var prune bool
 	deletedImages := make(map[string]struct{}, len(targetImages))
+	nodeName := os.Getenv("NODE_NAME")
 	for _, imgDigestOrTag := range targetImages {
 		if imgDigestOrTag == "*" {
 			prune = true
@@ -70,12 +70,11 @@ func removeImages(c Client, targetImages []string, recorder events.EventRecorder
 				continue
 			}
 
-			deletedImages[imgDigestOrTag] = struct{}{}
 			log.Info("removed image", "given", imgDigestOrTag, "digest", digest, "name", idToTagListMap[digest])
-			if *emitEvents {
-				emitEvent(recorder, idToTagListMap[digest], digest)
+			if *emitRemovalEvents {
+				emitEvent(recorder, nodeName, idToTagListMap[digest], digest)
 			}
-			continue
+			deletedImages[imgDigestOrTag] = struct{}{}
 		}
 
 		digest, isRunning := runningImages[imgDigestOrTag]
@@ -83,13 +82,13 @@ func removeImages(c Client, targetImages []string, recorder events.EventRecorder
 			log.Info("image is running", "given", imgDigestOrTag, "digest", digest, "name", idToTagListMap[digest])
 			continue
 		}
-
 		log.Info("image is not on node", "given", imgDigestOrTag)
 	}
 
 	if prune {
 		success := true
 		for _, digest := range nonRunningImages {
+			// in the case both name -> digest and digest -> digest were present
 			if _, deleted := deletedImages[digest]; deleted {
 				continue
 			}
@@ -105,10 +104,9 @@ func removeImages(c Client, targetImages []string, recorder events.EventRecorder
 				continue
 			}
 			log.Info("removed image", "digest", digest, "name", idToTagListMap[digest])
-			if *emitEvents {
-				emitEvent(recorder, idToTagListMap[digest], digest)
+			if *emitRemovalEvents {
+				emitEvent(recorder, nodeName, idToTagListMap[digest], digest)
 			}
-
 			deletedImages[digest] = struct{}{}
 		}
 		if success {
@@ -117,23 +115,18 @@ func removeImages(c Client, targetImages []string, recorder events.EventRecorder
 			log.Info("error during prune")
 		}
 	}
-
 	return nil
 }
 
-func emitEvent(recorder events.EventRecorder, name []string, digest string) {
-	nodeName := os.Getenv("NODE_NAME")
+func emitEvent(recorder record.EventRecorder, nodeName string, name []string, digest string) {
 	nodeRef := &corev1.ObjectReference{
 		Kind:      "Node",
 		Name:      nodeName,
 		Namespace: "",
 	}
-
-	spew.Dump(nodeRef)
-
 	ref, err := reference.GetReference(scheme.Scheme, nodeRef)
 	if err != nil {
 		log.Error(err, "could not get reference to node", nodeName)
 	}
-	recorder.Eventf(ref, nil, corev1.EventTypeNormal, "RemovedImage", "removed image", "Container image %s with digest %s", name, digest)
+	recorder.Eventf(ref, corev1.EventTypeNormal, "RemovedImage", "Removed image with name %v and digest %v", name, digest)
 }
