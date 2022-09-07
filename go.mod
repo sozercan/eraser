@@ -25,6 +25,11 @@ require (
 )
 
 require (
+	github.com/go-logr/stdr v1.2.2 // indirect
+	go.opentelemetry.io/otel/trace v1.9.0 // indirect
+)
+
+require (
 	cloud.google.com/go v0.99.0 // indirect
 	cloud.google.com/go/storage v1.14.0 // indirect
 	github.com/Azure/azure-sdk-for-go v63.0.0+incompatible // indirect
@@ -96,7 +101,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/go-containerregistry v0.7.1-0.20211214010025-a65b7844a475 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -186,6 +191,8 @@ require (
 	github.com/zclconf/go-cty-yaml v1.0.2 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.opencensus.io v0.23.0 // indirect
+	go.opentelemetry.io/otel v1.9.0
+	go.opentelemetry.io/otel/metric v0.31.0
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
