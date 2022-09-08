@@ -22,8 +22,7 @@ var (
 	PodsFailed                syncfloat64.Counter
 )
 
-// NewStatsReporter instantiates otel reporter
-func InitMetrics() {
+func InitMetricInstruments() {
 	meter := metric.NewNoopMeterProvider().Meter("eraser")
 	var err error
 
@@ -71,5 +70,4 @@ func InitMetrics() {
 		fmt.Println("Failed to register instrument: PodsFailed")
 		panic(err)
 	}
-
 }
