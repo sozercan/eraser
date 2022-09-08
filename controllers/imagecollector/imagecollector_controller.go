@@ -43,6 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/Azure/eraser/pkg/logger"
+	"github.com/Azure/eraser/pkg/metrics"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -55,6 +56,7 @@ var (
 	deleteScanFailedImages = flag.Bool("delete-scan-failed-images", true, "whether or not to delete images for which scanning has failed")
 	scannerArgs            = utils.MultiFlag([]string{})
 	collectorArgs          = utils.MultiFlag([]string{})
+	startTime              time.Time
 )
 
 func init() {
@@ -192,12 +194,17 @@ func (r *Reconciler) handleJobDeletion(ctx context.Context, job *eraserv1alpha1.
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	// record duration of collector imagejob for metrics
+	metrics.ImageJobCollectorDuration.Record(ctx, float64(time.Since(startTime).Milliseconds()))
+
 	log.Info("end job deletion")
 	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) createImageJob(ctx context.Context, req ctrl.Request, argsCollector []string) (ctrl.Result, error) {
 	scanDisabled := *scannerImage == ""
+	startTime = time.Now()
 
 	job := &eraserv1alpha1.ImageJob{
 		ObjectMeta: metav1.ObjectMeta{

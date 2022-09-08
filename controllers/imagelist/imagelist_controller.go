@@ -41,6 +41,7 @@ import (
 	eraserv1alpha1 "github.com/Azure/eraser/api/v1alpha1"
 	"github.com/Azure/eraser/controllers/util"
 	"github.com/Azure/eraser/pkg/logger"
+	"github.com/Azure/eraser/pkg/metrics"
 	"github.com/Azure/eraser/pkg/utils"
 )
 
@@ -51,6 +52,7 @@ const (
 var (
 	log       = logf.Log.WithName("controller").WithValues("process", "imagelist-controller")
 	imageList = types.NamespacedName{Name: "imagelist"}
+	startTime time.Time
 )
 
 func Add(mgr manager.Manager) error {
@@ -170,6 +172,10 @@ func (r *Reconciler) handleJobDeletion(ctx context.Context, job *eraserv1alpha1.
 		return ctrl.Result{}, err
 	}
 
+	// record eraser imagejob duration for metrics
+	metrics.ImageJobEraserDuration.Record(ctx, float64(time.Since(startTime).Milliseconds()))
+
+	log.Info("end job deletion")
 	return ctrl.Result{}, nil
 }
 
@@ -265,6 +271,7 @@ func (r *Reconciler) handleImageListEvent(ctx context.Context, req *ctrl.Request
 
 	err = r.Create(ctx, job)
 	log.Info("creating imagejob", "job", job.Name)
+	startTime = time.Now()
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return reconcile.Result{}, nil
