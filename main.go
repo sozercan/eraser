@@ -38,6 +38,7 @@ import (
 
 	eraserv1alpha1 "github.com/Azure/eraser/api/v1alpha1"
 	"github.com/Azure/eraser/controllers"
+	"github.com/Azure/eraser/pkg/metrics"
 	"github.com/Azure/eraser/version"
 	//+kubebuilder:scaffold:imports
 )
@@ -78,6 +79,10 @@ func main() {
 			err := server.ListenAndServe()
 			setupLog.Error(err, "pprof server failed")
 		}()
+	}
+
+	if err := metrics.InitMetricInstruments(); err != nil {
+		setupLog.Info("unable to create metric instruments", err)
 	}
 
 	config := ctrl.GetConfigOrDie()
