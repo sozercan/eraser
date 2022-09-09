@@ -81,8 +81,9 @@ func main() {
 		}()
 	}
 
+	// initialize metric instruments
 	if err := metrics.InitMetricInstruments(); err != nil {
-		setupLog.Info("unable to create metric instruments", err)
+		setupLog.Info("failed to create metric instruments", err)
 	}
 
 	config := ctrl.GetConfigOrDie()
