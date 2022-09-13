@@ -6,7 +6,7 @@ import (
 	"os"
 
 	runtimemetrics "go.opentelemetry.io/contrib/instrumentation/runtime"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/metric/instrument/asyncfloat64"
 	"go.opentelemetry.io/otel/metric/instrument/syncfloat64"
@@ -49,7 +49,7 @@ func InitMetricInstruments() error {
 
 	klog.InfoS("Prometheus metrics server running", "address", metricsAddr)
 
-	meter := metric.NewNoopMeterProvider().Meter("eraser")
+	meter := global.MeterProvider().Meter("eraser")
 
 	if ImageJobCollectorDuration, err = meter.SyncFloat64().Histogram("imagejob_collector_duration", instrument.WithDescription("Distribution of how long it took for collector imagejobs"), instrument.WithUnit(unit.Milliseconds)); err != nil {
 		klog.InfoS("Failed to register instrument: ImageJobCollectorDuration")
