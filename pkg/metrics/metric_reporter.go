@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	runtimemetrics "go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/metric/instrument"
@@ -28,7 +29,7 @@ var (
 )
 
 func InitMetricInstruments() error {
-	err, exporter := InitPrometheusExporter(metricsAddr)
+	err, _ := InitPrometheusExporter(metricsAddr)
 	if err != nil {
 		fmt.Println("unable to initialize prometheus exporter")
 		return err
@@ -39,7 +40,7 @@ func InitMetricInstruments() error {
 		return err
 	}
 
-	http.HandleFunc("/metrics", exporter.ServeHTTP)
+	http.Handle("/metrics", promhttp.Handler())
 	go func() {
 		if err := http.ListenAndServe(metricsAddr, nil); err != nil {
 			klog.ErrorS(err, "failed to register prometheus endpoint", "metricsAddress", metricsAddr)

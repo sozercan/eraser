@@ -18,6 +18,7 @@ func InitPrometheusExporter(metricsAddress string) (error, *prometheus.Exporter)
 	ctrl := controller.New(
 		processor.NewFactory(
 			selector.NewWithHistogramDistribution(
+				// change distribution
 				histogram.WithExplicitBoundaries(config.DefaultHistogramBoundaries),
 			),
 			aggregation.CumulativeTemporalitySelector(),
