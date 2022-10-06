@@ -54,7 +54,7 @@ const (
 
 var (
 	Testenv            env.Environment
-	Image              = os.Getenv("IMAGE")
+	EraserImage        = os.Getenv("ERASER_IMAGE")
 	ManagerImage       = os.Getenv("MANAGER_IMAGE")
 	CollectorImage     = os.Getenv("COLLECTOR_IMAGE")
 	ScannerImage       = os.Getenv("SCANNER_IMAGE")
@@ -64,6 +64,11 @@ var (
 	TestNamespace      = envconf.RandomName("test-ns", 16)
 	EraserNamespace    = pkgUtil.GetNamespace()
 	TestLogDir         = os.Getenv("TEST_LOGDIR")
+
+	HelmControllerManagerImage = "controllerManager.image.repository=" + ManagerImage
+	HelmEraserImage            = "eraser.image.repository=" + EraserImage
+	HelmCollectorImage         = "collector.image.repository=" + CollectorImage
+	HelmScannerImage           = "scanner.image.repository=" + ScannerImage
 )
 
 func IsNotFound(err error) bool {

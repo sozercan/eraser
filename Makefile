@@ -1,12 +1,12 @@
 VERSION := v0.4.0
 
 # Image URL to use all building/pushing image targets
-TRIVY_SCANNER_IMG ?= ghcr.io/azure/eraser-trivy-scanner:${VERSION}
-MANAGER_IMG ?= ghcr.io/azure/eraser-manager:${VERSION}
-ERASER_IMG ?= ghcr.io/azure/eraser:${VERSION}
-COLLECTOR_IMG ?= ghcr.io/azure/collector:${VERSION}
+TRIVY_SCANNER_IMG ?= docker.io/sozercan/eraser-trivy-scanner:${VERSION}
+MANAGER_IMG ?= docker.io/sozercan/eraser-manager:${VERSION}
+ERASER_IMG ?= docker.io/sozercan/eraser:${VERSION}
+COLLECTOR_IMG ?= docker.io/sozercan/collector:${VERSION}
 VULNERABLE_IMG ?= docker.io/library/alpine:3.7.3
-NON_VULNERABLE_IMG ?= ghcr.io/azure/non-vulnerable:latest
+NON_VULNERABLE_IMG ?= docker.io/sozercan/non-vulnerable:latest
 E2E_TESTS ?= $(shell find ./test/e2e/tests/ -mindepth 1 -type d)
 TEST_LOGDIR ?= $(PWD)/test_logs
 
@@ -134,7 +134,7 @@ non-vulnerable-img:
 e2e-test: vulnerable-img non-vulnerable-img
 	for test in $(E2E_TESTS); do \
 		CGO_ENABLED=0 \
-			IMAGE=${ERASER_IMG} \
+			ERASER_IMAGE=${ERASER_IMG} \
 			MANAGER_IMAGE=${MANAGER_IMG} \
 			COLLECTOR_IMAGE=${COLLECTOR_IMG} \
 			SCANNER_IMAGE=${TRIVY_SCANNER_IMG} \

@@ -25,10 +25,15 @@ func TestMain(m *testing.M) {
 		envfuncs.CreateKindClusterWithConfig(util.KindClusterName, util.NodeVersion, "../../kind-config.yaml"),
 		envfuncs.CreateNamespace(util.TestNamespace),
 		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.ManagerImage),
-		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.Image),
+		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.EraserImage),
 		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.CollectorImage),
 		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.NonVulnerableImage),
-		util.DeployEraserHelm(util.EraserNamespace, "--set", `scanner.image.repository=`, "--set", `controllerManager.additionalArgs={--job-cleanup-on-success-delay=1m}`),
+		util.DeployEraserHelm(util.EraserNamespace,
+			"--set", util.HelmControllerManagerImage,
+			"--set", util.HelmEraserImage,
+			"--set", util.HelmCollectorImage,
+			"--set", `scanner.image.repository=`,
+			"--set", `controllerManager.additionalArgs={--job-cleanup-on-success-delay=1m}`),
 	).Finish(
 		envfuncs.DestroyKindCluster(util.KindClusterName),
 	)

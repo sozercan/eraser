@@ -25,7 +25,7 @@ func TestMain(m *testing.M) {
 		envfuncs.CreateKindClusterWithConfig(util.KindClusterName, util.NodeVersion, "../../kind-config.yaml"),
 		envfuncs.CreateNamespace(util.TestNamespace),
 		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.ManagerImage),
-		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.Image),
+		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.EraserImage),
 		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.ScannerImage),
 		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.CollectorImage),
 		envfuncs.LoadDockerImageToCluster(util.KindClusterName, util.VulnerableImage),
