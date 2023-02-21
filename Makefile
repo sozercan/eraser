@@ -28,6 +28,8 @@ GOLANGCI_LINT_VERSION := 1.43.0
 TRIVY_VERSION ?= $(shell go list -f '{{ .Version }}' -m github.com/aquasecurity/trivy)
 
 PLATFORM ?= linux
+# Windows OS Version
+OSVERSION ?= 1809
 
 # build variables
 LDFLAGS ?= $(shell build/version.sh "${VERSION}")
@@ -208,6 +210,15 @@ docker-build-eraser: ## Build docker image for eraser image.
 		--output=$(OUTPUT_TYPE) \
 		-t ${ERASER_IMG} \
 		--target eraser .
+
+docker-build-eraser-windows:
+	docker buildx build \
+		$(_CACHE_FROM) $(_CACHE_TO) \
+		--platform="windows/amd64" \
+		--output=type=$(OUTPUT_TYPE) \
+		--build-arg OSVERSION=${OSVERSION} \
+		-t ${ERASER_REPO}-windows-${OSVERSION}-amd64:${VERSION} \
+		-f Dockerfile.windows .
 
 docker-build-collector:
 	docker buildx build \
