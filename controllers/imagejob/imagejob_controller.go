@@ -43,6 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/kind/pkg/errors"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/eraser-dev/eraser/api/unversioned"
 	"github.com/eraser-dev/eraser/api/unversioned/config"
 	eraserv1 "github.com/eraser-dev/eraser/api/v1"
@@ -358,6 +359,7 @@ func (r *Reconciler) handleNewJob(ctx context.Context, imageJob *eraserv1.ImageJ
 	if err != nil {
 		return err
 	}
+	spew.Dump("*** eraserConfig Components", eraserConfig.Components)
 	log.V(1).Info("configuration used", "manager", eraserConfig.Manager, "components", eraserConfig.Components)
 
 	filterOpts := eraserConfig.Manager.NodeFilter
@@ -389,7 +391,7 @@ func (r *Reconciler) handleNewJob(ctx context.Context, imageJob *eraserv1.ImageJ
 	podSpecTemplate := template.Template.Spec
 	for i := range nodeList {
 		log := log.WithValues("node", nodeList[i].Name)
-		podSpec, err := copyAndFillTemplateSpec(&podSpecTemplate, env, &nodeList[i], &eraserConfig.Manager.Runtime)
+		podSpec, err := copyAndFillTemplateSpec(&podSpecTemplate, env, &nodeList[i], &eraserConfig.Manager.Runtime, &eraserConfig.Components.Scanner.ContainerConfig)
 		if err != nil {
 			return err
 		}
@@ -562,7 +564,7 @@ nodes:
 	return nodeList, skipped, nil
 }
 
-func copyAndFillTemplateSpec(templateSpecTemplate *corev1.PodSpec, env []corev1.EnvVar, node *corev1.Node, runtimeSpec *unversioned.RuntimeSpec) (*corev1.PodSpec, error) {
+func copyAndFillTemplateSpec(templateSpecTemplate *corev1.PodSpec, env []corev1.EnvVar, node *corev1.Node, runtimeSpec *unversioned.RuntimeSpec, scanCfg *unversioned.ContainerConfig) (*corev1.PodSpec, error) {
 	nodeName := node.Name
 
 	u, err := url.Parse(runtimeSpec.Address)
@@ -571,11 +573,47 @@ func copyAndFillTemplateSpec(templateSpecTemplate *corev1.PodSpec, env []corev1.
 	}
 
 	volumes := []corev1.Volume{
-		{Name: "runtime-sock-volume", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: u.Path}}},
+		{
+			Name: "runtime-sock-volume",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: u.Path,
+				},
+			},
+		},
 	}
 
 	volumeMounts := []corev1.VolumeMount{
-		{MountPath: controllerUtils.CRIPath, Name: "runtime-sock-volume"},
+		{
+			MountPath: controllerUtils.CRIPath,
+			Name:      "runtime-sock-volume",
+		},
+	}
+
+	spew.Dump("*** scanCfg", &scanCfg)
+	spew.Dump("*** scanCfg.volumemounts", &scanCfg.VolumeMounts)
+
+	// given the volume mounts from config, create the volume for the pod and volume mounts for the scanner container
+	for i := range scanCfg.VolumeMounts {
+		volumeMount := corev1.VolumeMount{
+			Name:     scanCfg.VolumeMounts[i].Name,
+			ReadOnly: true,
+		}
+
+		source := scanCfg.VolumeMounts[i].VolumeSource
+		spew.Dump("*** source", source)
+		switch {
+		case source.HostPath != nil:
+			volumeMount.MountPath = source.HostPath.Path
+		default:
+			return nil, fmt.Errorf("unsupported volume source: %v", source)
+		}
+		volumeMounts = append(volumeMounts, volumeMount)
+
+		volumes = append(volumes, corev1.Volume{
+			Name:         scanCfg.VolumeMounts[i].Name,
+			VolumeSource: scanCfg.VolumeMounts[i].VolumeSource,
+		})
 	}
 
 	templateSpec := templateSpecTemplate.DeepCopy()

@@ -489,6 +489,15 @@ data:
           timeout:
             total: 23h
             perImage: 1h
+        volumeMounts:
+          - name: ca-certs
+            hostPath:
+              path: /etc/ssl/certs
+              type: Directory
+          - name: etc-pki-ca-certs
+            hostPath:
+              path: /etc/pki/ca-trust/extracted
+              type: DirectoryOrCreate
       remover:
         image:
           repo: ghcr.io/eraser-dev/remover

@@ -36,7 +36,7 @@ KUSTOMIZE_VERSION ?= 3.8.9
 KUBERNETES_VERSION ?= 1.29.2
 NODE_VERSION ?= 20-bullseye-slim
 ENVTEST_K8S_VERSION ?= 1.25
-GOLANGCI_LINT_VERSION := 1.43.0
+GOLANGCI_LINT_VERSION := 1.59.1
 
 PLATFORM ?= linux
 
@@ -110,7 +110,7 @@ help: ## Display this help.
 ##@ Linting
 .PHONY: lint
 lint: $(GOLANGCI_LINT) ## Runs go linting.
-	$(GOLANGCI_LINT) run -v
+	$(GOLANGCI_LINT) run -v --fix
 
 ##@ Development
 

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -82,10 +83,16 @@ type OptionalContainerConfig struct {
 }
 
 type ContainerConfig struct {
-	Image   RepoTag              `json:"image,omitempty"`
-	Request ResourceRequirements `json:"request,omitempty"`
-	Limit   ResourceRequirements `json:"limit,omitempty"`
-	Config  *string              `json:"config,omitempty"`
+	Image        RepoTag              `json:"image,omitempty"`
+	Request      ResourceRequirements `json:"request,omitempty"`
+	Limit        ResourceRequirements `json:"limit,omitempty"`
+	Config       *string              `json:"config,omitempty"`
+	VolumeMounts []VolumeMount        `json:"volumeMounts,omitempty"`
+}
+
+type VolumeMount struct {
+	Name         string              `json:"name,omitempty"`
+	VolumeSource corev1.VolumeSource `json:",inline"`
 }
 
 type ManagerConfig struct {
