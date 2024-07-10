@@ -489,7 +489,7 @@ data:
           timeout:
             total: 23h
             perImage: 1h
-        volumeMounts:
+        volumes:
           - name: ca-certs
             hostPath:
               path: /etc/ssl/certs

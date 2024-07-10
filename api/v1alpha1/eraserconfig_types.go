@@ -85,16 +85,11 @@ type OptionalContainerConfig struct {
 }
 
 type ContainerConfig struct {
-	Image        RepoTag              `json:"image,omitempty"`
-	Request      ResourceRequirements `json:"request,omitempty"`
-	Limit        ResourceRequirements `json:"limit,omitempty"`
-	Config       *string              `json:"config,omitempty"`
-	VolumeMounts []VolumeMount        `json:"volumeMounts,omitempty"`
-}
-
-type VolumeMount struct {
-	Name         string              `json:"name,omitempty"`
-	VolumeSource corev1.VolumeSource `json:",inline"`
+	Image   RepoTag              `json:"image,omitempty"`
+	Request ResourceRequirements `json:"request,omitempty"`
+	Limit   ResourceRequirements `json:"limit,omitempty"`
+	Config  *string              `json:"config,omitempty"`
+	Volumes []corev1.Volume      `json:"volumes,omitempty"`
 }
 
 type ManagerConfig struct {

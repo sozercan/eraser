@@ -124,7 +124,7 @@ func Default() *unversioned.EraserConfig {
 						Mem: resource.MustParse("500Mi"),
 						CPU: resource.Quantity{},
 					},
-					Config:       nil,
+					Config: nil,
 				},
 			},
 			Scanner: unversioned.OptionalContainerConfig{

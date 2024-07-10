@@ -42,6 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/eraser-dev/eraser/api/unversioned"
 	"github.com/eraser-dev/eraser/api/unversioned/config"
 	eraserv1 "github.com/eraser-dev/eraser/api/v1"
@@ -218,6 +219,8 @@ func getConfig(configFile string) (*unversioned.EraserConfig, error) {
 		os.Exit(1)
 	}
 
+	// yaml.Unmarshal -> v1alpha3
+
 	switch av.APIVersion {
 	case "eraser.sh/v1alpha1":
 		return getUnversioned(fileBytes, v1alpha1Config.Default(), fromV1alpha1)
@@ -239,10 +242,15 @@ func getUnversioned[T any](b []byte, defaults *T, convert convertFunc[T]) (*unve
 		return nil, err
 	}
 
+	spew.Dump("*** CFG", cfg)
+
 	var unv unversioned.EraserConfig
 	if err := convert(cfg, &unv, nil); err != nil {
 		return nil, err
 	}
+
+	spew.Dump("*** unv", unv)
+
 
 	return &unv, nil
 }

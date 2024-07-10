@@ -591,16 +591,16 @@ func copyAndFillTemplateSpec(templateSpecTemplate *corev1.PodSpec, env []corev1.
 	}
 
 	spew.Dump("*** scanCfg", &scanCfg)
-	spew.Dump("*** scanCfg.volumemounts", &scanCfg.VolumeMounts)
+	spew.Dump("*** scanCfg.volumemounts", &scanCfg.Volumes)
 
-	// given the volume mounts from config, create the volume for the pod and volume mounts for the scanner container
-	for i := range scanCfg.VolumeMounts {
+	// given the volume mounts from config, create the volume for the pod and volume mounts for the container
+	for i := range scanCfg.Volumes {
 		volumeMount := corev1.VolumeMount{
-			Name:     scanCfg.VolumeMounts[i].Name,
+			Name:     scanCfg.Volumes[i].Name,
 			ReadOnly: true,
 		}
 
-		source := scanCfg.VolumeMounts[i].VolumeSource
+		source := scanCfg.Volumes[i].VolumeSource
 		spew.Dump("*** source", source)
 		switch {
 		case source.HostPath != nil:
@@ -610,10 +610,7 @@ func copyAndFillTemplateSpec(templateSpecTemplate *corev1.PodSpec, env []corev1.
 		}
 		volumeMounts = append(volumeMounts, volumeMount)
 
-		volumes = append(volumes, corev1.Volume{
-			Name:         scanCfg.VolumeMounts[i].Name,
-			VolumeSource: scanCfg.VolumeMounts[i].VolumeSource,
-		})
+		volumes = append(volumes, scanCfg.Volumes[i])
 	}
 
 	templateSpec := templateSpecTemplate.DeepCopy()
