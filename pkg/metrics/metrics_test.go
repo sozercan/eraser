@@ -7,8 +7,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
 	metric "go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/global"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
@@ -24,19 +24,19 @@ func TestConfigureMetrics(t *testing.T) {
 		t.Fatal("unable to configure exporter")
 	}
 
-	global.SetMeterProvider(provider)
+	otel.SetMeterProvider(provider)
 }
 
 func TestRecordMetrics(t *testing.T) {
-	if err := RecordMetricsRemover(context.Background(), global.MeterProvider(), 1); err != nil {
+	if err := RecordMetricsRemover(context.Background(), otel.MeterProvider(), 1); err != nil {
 		t.Fatal("could not record eraser metrics")
 	}
 
-	if err := RecordMetricsScanner(context.Background(), global.MeterProvider(), 1); err != nil {
+	if err := RecordMetricsScanner(context.Background(), otel.MeterProvider(), 1); err != nil {
 		t.Fatal("could not record scanner metrics")
 	}
 
-	if err := RecordMetricsController(context.Background(), global.MeterProvider(), 1.0, 1, 1); err != nil {
+	if err := RecordMetricsController(context.Background(), otel.MeterProvider(), 1.0, 1, 1); err != nil {
 		t.Fatal("could not record scanner metrics")
 	}
 }

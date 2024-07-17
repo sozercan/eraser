@@ -27,7 +27,7 @@ import (
 	"syscall"
 	"time"
 
-	"go.opentelemetry.io/otel/metric/global"
+	"go.opentelemetry.io/otel"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -120,7 +120,7 @@ func newReconciler(mgr manager.Manager, cfg *config.Manager) (*Reconciler, error
 		defer cancel()
 
 		exporter, reader, provider = metrics.ConfigureMetrics(ctx, log, otlpEndpoint)
-		global.SetMeterProvider(provider)
+		otel.SetMeterProvider(provider)
 	}
 
 	rec := &Reconciler{
