@@ -1,4 +1,4 @@
-FROM golang:1.22-bullseye@sha256:11ff2c5de8044d8d749cc684f6f3cdfbc9b2755960a62d4948b3483dc090e7aa
+FROM golang:1.23-bullseye@sha256:80eb3147ef40b58d527d9c2e634b1a79a750aee09de6f973844db38b33f0550b
 
 RUN GO111MODULE=on go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.15.0
 RUN GO111MODULE=on go install k8s.io/code-generator/cmd/conversion-gen@v0.29.0
